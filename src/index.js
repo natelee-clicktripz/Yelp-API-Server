@@ -10,6 +10,7 @@ import {
   AuthenticationError,
 } from 'apollo-server-express';
 import fetch from 'node-fetch';
+import helmet from 'helmet';
 
 import schema from './schema';
 import resolvers from './resolvers';
@@ -21,6 +22,7 @@ import searches from './resolvers/yelp'
 const app = express();
 
 app.use(cors());
+app.use(helmet());
 
 app.use(morgan('dev'));
 
