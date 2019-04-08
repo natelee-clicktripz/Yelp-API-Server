@@ -9,18 +9,39 @@ import {
   ApolloServer,
   AuthenticationError,
 } from 'apollo-server-express';
+import fetch from 'node-fetch';
 
 import schema from './schema';
 import resolvers from './resolvers';
 import models, { sequelize } from './models';
 import loaders from './loaders';
 import createUsersWithMessages from './models/testModels';
+import searches from './resolvers/yelp'
 
 const app = express();
 
 app.use(cors());
 
 app.use(morgan('dev'));
+
+const yelpObj = {
+    "method": "POST",
+    "headers": {
+        "Authorization": 'Bearer ' + process.env.YELP_API,
+        "Content-Type": "application/graphql",
+    }
+}
+
+app.get('/api/yelpsearch', function(req, res) {
+    const {term, location} = req.query;
+    yelpObj.body = searches(term, location);
+
+    fetch('https://api.yelp.com/v3/graphql', yelpObj).then(function(res) {
+        return res.text()
+    }).then(function(body) {
+        return res.json(body);
+    })
+})
 
 const getMe = async req => {
   const token = req.headers['x-token'];
