@@ -69,8 +69,12 @@ app.get('/api/yelpsearch', (req, res) => {
 app.get('/api/weather', (req, res) => {
     const {location} = req.query;
     let tempLocation = location;
-
     tempLocation = tempLocation.toLowerCase();
+
+    if(tempLocation.indexOf(',') > -1) {
+        tempLocation = tempLocation.split(',')[0];
+    }
+
     let url = weather(tempLocation);
 
     if(cache['weather'][tempLocation]) {
