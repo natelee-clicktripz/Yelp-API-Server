@@ -19,6 +19,7 @@ import loaders from './loaders';
 import createUsersWithMessages from './models/testModels';
 import searches from './resolvers/yelp'
 
+const cache = {};
 const app = express();
 
 app.use(cors());
@@ -36,11 +37,27 @@ const yelpObj = {
 
 app.get('/api/yelpsearch', function(req, res) {
     const {term, location} = req.query;
-    yelpObj.body = searches(term, location);
+    let tempLocation = location;
+    let tempTerm = term;
+
+    tempLocation = tempLocation.toLowerCase();
+    tempTerm = tempTerm.toLowerCase();
+
+    if(cache && cache[tempTerm] && cache[tempTerm][tempLocation]) {
+        return res.json(cache[tempTerm][tempLocation]);
+    }
+
+    yelpObj.body = searches(tempTerm, tempLocation)
 
     fetch('https://api.yelp.com/v3/graphql', yelpObj).then(function(res) {
         return res.text()
     }).then(function(body) {
+
+        if(!cache[tempTerm]) {
+            cache[tempTerm] = {};
+            cache[tempTerm][tempLocation] = body;
+        }
+
         return res.json(body);
     })
 })

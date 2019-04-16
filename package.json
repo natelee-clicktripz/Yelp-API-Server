@@ -1,5 +1,5 @@
 {
-  "name": "fullstack-apollo-express-postgresql-boilerplate",
+  "name": "Yelp-API-Server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -13,7 +13,7 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "keywords": [],
-  "author": "Robin Wieruch <hello@rwieruch.com> (https://www.robinwieruch.de)",
+  "author": "Nate",
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "^7.1.6",
