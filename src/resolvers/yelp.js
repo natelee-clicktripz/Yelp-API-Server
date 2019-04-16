@@ -1,4 +1,4 @@
-export default function searches(term, location) {
+export default function restaurants(term, location) {
     return `
         {
             search(term: ${term}, location:${location}, limit:10) {

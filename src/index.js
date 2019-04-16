@@ -17,9 +17,13 @@ import resolvers from './resolvers';
 import models, { sequelize } from './models';
 import loaders from './loaders';
 import createUsersWithMessages from './models/testModels';
-import searches from './resolvers/yelp'
+import restaurants from './resolvers/yelp'
+import weather from './resolvers/weather';
 
-const cache = {};
+const cache = {
+    'yelp': {},
+    'weather': {}
+};
 const app = express();
 
 app.use(cors());
@@ -35,7 +39,7 @@ const yelpObj = {
     }
 }
 
-app.get('/api/yelpsearch', function(req, res) {
+app.get('/api/yelpsearch', (req, res) => {
     const {term, location} = req.query;
     let tempLocation = location;
     let tempTerm = term;
@@ -43,19 +47,41 @@ app.get('/api/yelpsearch', function(req, res) {
     tempLocation = tempLocation.toLowerCase();
     tempTerm = tempTerm.toLowerCase();
 
-    if(cache && cache[tempTerm] && cache[tempTerm][tempLocation]) {
-        return res.json(cache[tempTerm][tempLocation]);
+    if(cache['yelp'][tempTerm] && cache['yelp'][tempTerm][tempLocation]) {
+        return res.json(cache['yelp'][tempTerm][tempLocation]);
     }
 
-    yelpObj.body = searches(tempTerm, tempLocation)
+    yelpObj.body = restaurants(tempTerm, tempLocation)
 
     fetch('https://api.yelp.com/v3/graphql', yelpObj).then(function(res) {
         return res.text()
     }).then(function(body) {
 
-        if(!cache[tempTerm]) {
-            cache[tempTerm] = {};
-            cache[tempTerm][tempLocation] = body;
+        if(!cache['yelp'][tempTerm]) {
+            cache['yelp'][tempTerm] = {};
+            cache['yelp'][tempTerm][tempLocation] = body;
+        }
+
+        return res.json(body);
+    })
+})
+
+app.get('/api/weather', (req, res) => {
+    const {location} = req.query;
+    let tempLocation = location;
+
+    tempLocation = tempLocation.toLowerCase();
+    let url = weather(tempLocation);
+
+    if(cache['weather'][tempLocation]) {
+        return res.json(cache['weather'][tempLocation]);
+    }
+
+    fetch(url).then((res) => {
+        return res.text();
+    }).then((body) => {
+        if(!cache['weather'][tempLocation]) {
+            cache['weather'][tempLocation] = body;
         }
 
         return res.json(body);
