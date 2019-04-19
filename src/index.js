@@ -11,6 +11,7 @@ import {
 } from 'apollo-server-express';
 import fetch from 'node-fetch';
 import helmet from 'helmet';
+import redis from 'redis';
 
 import schema from './schema';
 import resolvers from './resolvers';
@@ -19,6 +20,10 @@ import loaders from './loaders';
 import createUsersWithMessages from './models/testModels';
 import restaurants from './resolvers/yelp'
 import weather from './resolvers/weather';
+
+const client = redis.createClient('//redis-14157.c60.us-west-1-2.ec2.cloud.redislabs.com:14157', {
+    password: 'I2A97eggg5eJInoUjJxos4w1i5kTcf21'
+});
 
 const cache = {
     'yelp': {},
@@ -40,30 +45,29 @@ const yelpObj = {
 }
 
 app.get('/api/yelpsearch', (req, res) => {
-    const {term, location} = req.query;
+    const {location} = req.query;
     let tempLocation = location;
-    let tempTerm = term;
 
     tempLocation = tempLocation.toLowerCase();
-    tempTerm = tempTerm.toLowerCase();
 
-    if(cache['yelp'][tempTerm] && cache['yelp'][tempTerm][tempLocation]) {
-        return res.json(cache['yelp'][tempTerm][tempLocation]);
-    }
+    return client.exists(`${tempLocation.replace(/\"/g, '')}:yelp`, (err, exist) => {
 
-    yelpObj.body = restaurants(tempTerm, tempLocation)
-
-    fetch('https://api.yelp.com/v3/graphql', yelpObj).then(function(res) {
-        return res.text()
-    }).then(function(body) {
-
-        if(!cache['yelp'][tempTerm]) {
-            cache['yelp'][tempTerm] = {};
-            cache['yelp'][tempTerm][tempLocation] = body;
+        if(exist) {
+            return client.hgetall(`${tempLocation.replace(/\"/g, '')}:yelp`, (err, obj) => {
+                return res.json(obj);
+            })
         }
 
-        return res.json(body);
-    })
+        yelpObj.body = restaurants(tempLocation)
+
+        fetch('https://api.yelp.com/v3/graphql', yelpObj).then(function(res) {
+            return res.text()
+        }).then(function(body) {
+
+            client.hset(`${tempLocation.replace(/\"/g, '')}:yelp`, 'yelp', body);
+            return res.json(body);
+        })
+    });
 })
 
 app.get('/api/weather', (req, res) => {
@@ -75,20 +79,21 @@ app.get('/api/weather', (req, res) => {
         tempLocation = tempLocation.split(',')[0];
     }
 
-    let url = weather(tempLocation);
-
-    if(cache['weather'][tempLocation]) {
-        return res.json(cache['weather'][tempLocation]);
-    }
-
-    fetch(url).then((res) => {
-        return res.text();
-    }).then((body) => {
-        if(!cache['weather'][tempLocation]) {
-            cache['weather'][tempLocation] = body;
+    return client.exists(`${tempLocation}:weather`, (err, exist) => {
+        if(exist) {
+            return client.hgetall(`${tempLocation}:weather`, (err, obj) => {
+                return res.json(obj);
+            })
         }
 
-        return res.json(body);
+        let url = weather(tempLocation);
+
+        fetch(url).then((res) => {
+            return res.text();
+        }).then((body) => {
+            client.hset(`${tempLocation}:weather`, 'weather', body);
+            return res.json(body);
+        })
     })
 })
 
