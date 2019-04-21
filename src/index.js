@@ -71,10 +71,10 @@ app.get('/api/yelpsearch', (req, res) => {
 })
 
 app.get('/api/weather', (req, res) => {
-    const {location} = req.query;
+    const {location, skipCache} = req.query;
     let tempLocation = location;
     tempLocation = tempLocation.toLowerCase();
-
+console.log(skipCache)
     if(tempLocation.indexOf(',') > -1) {
         tempLocation = tempLocation.split(',')[0];
     }
@@ -82,7 +82,18 @@ app.get('/api/weather', (req, res) => {
     return client.exists(`${tempLocation}:weather`, (err, exist) => {
         if(exist) {
             return client.hgetall(`${tempLocation}:weather`, (err, obj) => {
-                return res.json(obj);
+                if(new Date(JSON.parse(obj.weather).list[0].dt_txt) > new Date() && !skipCache) {
+                    return res.json(obj);
+                } else {
+                    let url = weather(tempLocation);
+
+                    fetch(url).then((res) => {
+                        return res.text();
+                    }).then((body) => {
+                        client.hset(`${tempLocation}:weather`, 'weather', body);
+                        return res.json(body);
+                    })
+                }
             })
         }
 
