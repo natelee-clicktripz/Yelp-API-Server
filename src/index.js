@@ -74,7 +74,7 @@ app.get('/api/weather', (req, res) => {
     const {location, skipCache} = req.query;
     let tempLocation = location;
     tempLocation = tempLocation.toLowerCase();
-console.log(skipCache)
+
     if(tempLocation.indexOf(',') > -1) {
         tempLocation = tempLocation.split(',')[0];
     }
