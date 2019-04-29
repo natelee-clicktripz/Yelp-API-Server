@@ -1,7 +1,7 @@
 export default function restaurants(location) {
     return `
         {
-            search(location:${location}, limit:10) {
+            search(location:"${location}", limit:10) {
                 business {
                     id
                     name
