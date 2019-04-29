@@ -21,8 +21,8 @@ import createUsersWithMessages from './models/testModels';
 import restaurants from './resolvers/yelp'
 import weather from './resolvers/weather';
 
-const client = redis.createClient('//redis-14157.c60.us-west-1-2.ec2.cloud.redislabs.com:14157', {
-    password: 'I2A97eggg5eJInoUjJxos4w1i5kTcf21'
+const client = redis.createClient(process.env.REDIS_HOST, {
+    password: process.env.REDIS_PASSWORD
 });
 
 const cache = {
@@ -177,12 +177,12 @@ const isTest = !!process.env.TEST_DATABASE;
 const isProduction = !!process.env.DATABASE_URL;
 const port = process.env.PORT || 8000;
 
-sequelize.sync({ force: isTest || isProduction }).then(async () => {
-  if (isTest || isProduction) {
-    createUsersWithMessages(new Date());
-  }
+// sequelize.sync({ force: isTest || isProduction }).then(async () => {
+//   if (isTest || isProduction) {
+//     createUsersWithMessages(new Date());
+//   }
 
   httpServer.listen({ port }, () => {
     console.log(`Apollo Server on http://localhost:${port}/graphql`);
   });
-});
+// });
